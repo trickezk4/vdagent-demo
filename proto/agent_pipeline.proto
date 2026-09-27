@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package vda.agent.v1;
+
+// Service implemented by all sub-agents (both TypeScript and Python)
+service SubAgentService {
+  // Executes a designated DAG step and streams real-time reasoning logs and artifacts
+  rpc ExecuteStep (StepExecutionRequest) returns (stream StepStreamEvent);
+
+  // Health and readiness check endpoint
+  rpc CheckHealth (HealthRequest) returns (HealthResponse);
+}
+
+// Request payload dispatched by the Gateway DAG Orchestrator
+message StepExecutionRequest {
+  string run_id = 1;                     // Unique UUID representing the entire execution workflow run
+  string task_id = 2;                    // Unique ID of the current task within the DAG (e.g., 'task-data-query')
+  string session_id = 3;                 // User/Client session identifier
+  string user_prompt = 4;                // Original user query or step-specific prompt instruction
+  string agent_role = 5;                 // Identifier of the target agent (e.g., 'data-agent', 'compare-agent')
+  repeated InputArtifact input_artifacts = 6; // Prior artifacts produced by upstream dependencies
+  string execution_context_json = 7;     // Additional dynamic parameters or configuration serialized as JSON
+}
+
+// Representation of prior artifacts fed into a downstream agent
+message InputArtifact {
+  string artifact_id = 1;                // Source artifact UUID
+  string artifact_type = 2;              // Type enum ('dataset', 'comparison', 'insight', 'chart_spec', etc.)
+  string content_json = 3;               // Serialized JSON payload of the artifact
+}
+
+// Server-streaming event emitted during step execution
+message StepStreamEvent {
+  enum EventType {
+    TRACE = 0;    // Intermediate thought process, internal reasoning, or progress log
+    TOKEN = 1;    // Partial text stream (for streaming LLM generation)
+    COMPLETE = 2; // Step completion signal containing the final ArtifactEnvelope JSON
+    ERROR = 3;    // Failure signal with descriptive error message
+  }
+
+  EventType type = 1;                    // Classification of the event
+  string message = 2;                    // Human-readable trace log or error details
+  string output_artifact_json = 3;       // Mandatory when type == COMPLETE; contains full serialized ArtifactEnvelope
+}
+
+// Request message for health checks
+message HealthRequest {}
+
+// Response message for health checks
+message HealthResponse {
+  bool is_healthy = 1;                   // True if agent is operational
+  string status_message = 2;             // Detailed status description (e.g., 'DataAgent is UP on port 50051')
+}
