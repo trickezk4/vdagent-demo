@@ -75,12 +75,12 @@ flowchart TB
 ### **1.1. Sơ Đồ Kiến Trúc Đơn Giản Hóa (PoC Quick-Look Diagram)**
 
 > [!TIP]
-> **Dành cho các thành viên trong team nắm nhanh PoC trong 30 giây**: Hệ thống hoạt động theo mô hình **Hub-and-Spoke tập trung qua Gateway**. Gateway nhận yêu cầu từ Web UI, vừa điều phối luồng phân tích 4 bước (DAG) qua 5 Core Sub-Agents (gRPC), vừa hỗ trợ chat 1-1 trực tiếp và tự động nhận diện Agent Python cắm nóng qua REST register mà không cần cấu hình thủ công.
+> **Dành cho các thành viên trong team nắm nhanh PoC**: Hệ thống hoạt động theo mô hình **Hub-and-Spoke tập trung qua Gateway**. Gateway nhận yêu cầu từ Web UI, vừa điều phối luồng phân tích 4 bước (DAG) qua 5 Core Sub-Agents (gRPC), vừa hỗ trợ chat 1-1 trực tiếp và tự động nhận diện Agent Python cắm nóng qua REST register mà không cần cấu hình thủ công.
 
 ```mermaid
 flowchart TD
     User(["👤 Người Dùng (Web Dashboard :5173)\n[Sidebar Loading • Chatbox CoT • Inspector 2 Chiều & Kho Artifacts]"])
-    
+  
     subgraph GatewayHub["🌐 API Gateway & Orchestrator Hub (:3000)"]
         DAG["⚡ DAG Orchestrator\n(Điều phối luồng 4 bước)"]
         Router["🧭 Dynamic Router\n& Hot-plug Registry"]
@@ -126,16 +126,16 @@ flowchart TD
 
 ## **2. Bản đồ Phân Bổ Mạng & Cổng Dịch Vụ (Network & Port Matrix)**
 
-| Thành phần | Cổng (Port) | Giao thức | Công nghệ chính | Trách nhiệm cốt lõi |
-| :--- | :--- | :--- | :--- | :--- |
-| **`apps/web`** | **5173** | HTTP | React 19, Vite, Tailwind v4, Recharts, Lucide | Giao diện 3 cột responsive, Chatbox CoT, Inspector điều hướng 2 chiều, Kho Artifacts |
-| **`apps/gateway`** | **3000** | HTTP / SSE | Hono, Node.js 22+, `@grpc/grpc-js`, Zod | API Gateway, Dynamic Intent Router, DAG Orchestrator, gRPC Hub, Quản lý Session |
-| **`data-agent`** | **50051** | gRPC (HTTP/2) | Node.js, Better-SQLite3, Protobuf, Zod | Trích xuất căn hộ chậm bán (DOM $\ge 90$d), tính toán chỉ số, sinh `DatasetArtifact` |
-| **`compare-agent`** | **50052** | gRPC (HTTP/2) | Node.js, Protobuf, Zod, CoT Engine | Đối chuẩn phân khu Sapphire (47.6 tr/m², 35d), tính chênh lệch, sinh `ComparisonArtifact` |
-| **`insight-agent`** | **50053** | gRPC (HTTP/2) | Node.js, Protobuf, Zod, CoT Engine | Đào sâu 3 nguyên nhân cốt lõi (hướng nắng, giá lệch, hết ưu đãi), sinh `InsightArtifact` |
-| **`chart-agent`** | **50054** | gRPC (HTTP/2) | Node.js, Protobuf, Zod, CoT Engine | Tạo đặc tả Recharts đa chiều (DOM vs 90d, Giá vs Chuẩn, Tương quan Giá-DOM) |
-| **`report-agent`** | **50055** | gRPC (HTTP/2) | Node.js, Protobuf, Zod, CoT Engine | Tổng hợp Báo cáo Điều tra Toàn diện 6 phần, nhúng 3 biểu đồ Recharts và bằng chứng |
-| **`python-finance-agent`** | **50056** | gRPC (HTTP/2) | Python 3.11+, `grpcio`, `pydantic` v2, `requests` | Tự động đăng ký nóng, tính lãi suất vay mua nhà, lịch trả góp dư nợ giảm dần |
+| Thành phần                       | Cổng (Port)    | Giao thức    | Công nghệ chính                                     | Trách nhiệm cốt lõi                                                                                   |
+| :--------------------------------- | :-------------- | :------------ | :----------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **`apps/web`**             | **5173**  | HTTP          | React 19, Vite, Tailwind v4, Recharts, Lucide          | Giao diện 3 cột responsive, Chatbox CoT, Inspector điều hướng 2 chiều, Kho Artifacts               |
+| **`apps/gateway`**         | **3000**  | HTTP / SSE    | Hono, Node.js 22+,`@grpc/grpc-js`, Zod               | API Gateway, Dynamic Intent Router, DAG Orchestrator, gRPC Hub, Quản lý Session                         |
+| **`data-agent`**           | **50051** | gRPC (HTTP/2) | Node.js, Better-SQLite3, Protobuf, Zod                 | Trích xuất căn hộ chậm bán (DOM$\ge 90$d), tính toán chỉ số, sinh `DatasetArtifact`         |
+| **`compare-agent`**        | **50052** | gRPC (HTTP/2) | Node.js, Protobuf, Zod, CoT Engine                     | Đối chuẩn phân khu Sapphire (47.6 tr/m², 35d), tính chênh lệch, sinh`ComparisonArtifact`        |
+| **`insight-agent`**        | **50053** | gRPC (HTTP/2) | Node.js, Protobuf, Zod, CoT Engine                     | Đào sâu 3 nguyên nhân cốt lõi (hướng nắng, giá lệch, hết ưu đãi), sinh`InsightArtifact` |
+| **`chart-agent`**          | **50054** | gRPC (HTTP/2) | Node.js, Protobuf, Zod, CoT Engine                     | Tạo đặc tả Recharts đa chiều (DOM vs 90d, Giá vs Chuẩn, Tương quan Giá-DOM)                    |
+| **`report-agent`**         | **50055** | gRPC (HTTP/2) | Node.js, Protobuf, Zod, CoT Engine                     | Tổng hợp Báo cáo Điều tra Toàn diện 6 phần, nhúng 3 biểu đồ Recharts và bằng chứng        |
+| **`python-finance-agent`** | **50056** | gRPC (HTTP/2) | Python 3.11+,`grpcio`, `pydantic` v2, `requests` | Tự động đăng ký nóng, tính lãi suất vay mua nhà, lịch trả góp dư nợ giảm dần            |
 
 ---
 
@@ -235,7 +235,7 @@ sequenceDiagram
     Note over FA: 1. Khởi động server gRPC (Port 50056)
     FA->>FA: Khởi tạo Thread tự động đăng ký (AutoRegister Thread)
     FA->>GW: POST /api/v1/agents/register\nPayload: { agent_id: "python-finance-agent", grpc_target: "localhost:50056", supported_intents: ["calculate_mortgage"] }
-    
+  
     rect rgb(30, 50, 30)
         Note over GW: 2. Xử lý Hot-Plugging không Downtime
         GW->>GW: grpcHub.registerDynamicClient("python-finance-agent", "localhost:50056")
@@ -266,7 +266,7 @@ Mỗi Agent trong hệ thống sở hữu cơ chế suy luận hai chế độ: 
 ```mermaid
 flowchart TD
     Req["Request đến Sub-Agent (gRPC ExecuteStep)"] --> CheckLLM{"Kiểm tra LLM API Key\n(OPENROUTER_API_KEY)?"}
-    
+  
     CheckLLM -->|Có API Key| CallLLM["Gọi OpenRouter Stream API\n(với Structured System Prompt & Schema Zod)"]
     CheckLLM -->|Không có / Timeout / Lỗi| Fallback["Kích hoạt Fallback CoT Steps\n(Dữ liệu thực từ SQLite Mock Warehouse)"]
 
@@ -321,6 +321,7 @@ sequenceDiagram
 ## **4. Hợp Đồng Dữ Liệu & Tính Toàn Vẹn Bằng Chứng (Data Contracts & Artifacts)**
 
 ### **4.1. Chuẩn Đóng Gói ArtifactEnvelope**
+
 Mọi dữ liệu nghiệp vụ luân chuyển giữa các Agent và lưu trữ trên hệ thống đều tuân thủ chặt chẽ cấu trúc phong bì bất biến:
 
 ```typescript
@@ -350,14 +351,14 @@ export interface ArtifactEnvelope {
 
 ### **4.2. Bảng Phân Phối Dữ Liệu Nghiệp Vụ Của Từng Agent**
 
-| Loại Artifact | Agent Sản Xuất | Cấu trúc Payload Đặc Trưng | Bằng chứng đính kèm (`evidence_refs`) |
-| :--- | :--- | :--- | :--- |
-| **`dataset`** | `data-agent` | Danh sách căn hộ (`units`), chỉ số DOM trung bình, tỷ lệ hấp thụ (`absorption_rate`), bộ lọc truy vấn | `['UNIT-VH-01', 'UNIT-VH-02', 'UNIT-VH-03', 'UNIT-VH-04']` |
-| **`comparison`**| `compare-agent` | Giá trị đối chuẩn phân khu (`baseline`), độ lệch đơn giá (`price_variance_pct`), tỷ lệ DOM vượt trội | `['UNIT-VH-02', 'UNIT-VH-05']` (Căn chậm bán vs Căn đã bán nhanh) |
-| **`insight`** | `insight-agent` | 3 Nguyên nhân gốc rễ (`root_causes`), mức độ nghiêm trọng, tỷ lệ tự tin (`confidence`), khuyến nghị xử lý | `['UNIT-VH-01', 'UNIT-VH-02', 'UNIT-VH-03']` |
-| **`chart_spec`**| `chart-agent` | 3 Cấu hình biểu đồ Recharts (DOM bar chart kèm `ReferenceLine(90)`, Price comparison bar, Price-DOM correlation) | Thừa hưởng từ `dataset` & `comparison` |
-| **`report`** | `report-agent` | Văn bản báo cáo toàn diện 6 phần theo chuẩn PRD, tích hợp sẵn 3 biểu đồ Recharts và liên kết bằng chứng | Tổng hợp toàn bộ `evidence_refs` của các bước trước |
-| **`finance_plan`**| `python-finance-agent` | Giá trị căn hộ, hạn mức vay (70%), lãi suất ưu đãi vs thả nổi, kỳ hạn vay, bảng khấu hao gốc lãi hàng tháng | Mã căn hộ được chỉ định (e.g., `UNIT-VH-02`) |
+| Loại Artifact             | Agent Sản Xuất         | Cấu trúc Payload Đặc Trưng                                                                                                  | Bằng chứng đính kèm (`evidence_refs`)                               |
+| :------------------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| **`dataset`**      | `data-agent`           | Danh sách căn hộ (`units`), chỉ số DOM trung bình, tỷ lệ hấp thụ (`absorption_rate`), bộ lọc truy vấn           | `['UNIT-VH-01', 'UNIT-VH-02', 'UNIT-VH-03', 'UNIT-VH-04']`               |
+| **`comparison`**   | `compare-agent`        | Giá trị đối chuẩn phân khu (`baseline`), độ lệch đơn giá (`price_variance_pct`), tỷ lệ DOM vượt trội        | `['UNIT-VH-02', 'UNIT-VH-05']` (Căn chậm bán vs Căn đã bán nhanh) |
+| **`insight`**      | `insight-agent`        | 3 Nguyên nhân gốc rễ (`root_causes`), mức độ nghiêm trọng, tỷ lệ tự tin (`confidence`), khuyến nghị xử lý    | `['UNIT-VH-01', 'UNIT-VH-02', 'UNIT-VH-03']`                             |
+| **`chart_spec`**   | `chart-agent`          | 3 Cấu hình biểu đồ Recharts (DOM bar chart kèm`ReferenceLine(90)`, Price comparison bar, Price-DOM correlation)          | Thừa hưởng từ`dataset` & `comparison`                              |
+| **`report`**       | `report-agent`         | Văn bản báo cáo toàn diện 6 phần theo chuẩn PRD, tích hợp sẵn 3 biểu đồ Recharts và liên kết bằng chứng       | Tổng hợp toàn bộ`evidence_refs` của các bước trước             |
+| **`finance_plan`** | `python-finance-agent` | Giá trị căn hộ, hạn mức vay (70%), lãi suất ưu đãi vs thả nổi, kỳ hạn vay, bảng khấu hao gốc lãi hàng tháng | Mã căn hộ được chỉ định (e.g.,`UNIT-VH-02`)                     |
 
 ---
 
