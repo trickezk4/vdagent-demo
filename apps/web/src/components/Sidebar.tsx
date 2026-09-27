@@ -18,6 +18,7 @@ import {
   Sparkles,
   Terminal,
   Loader2,
+  X,
 } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 
@@ -43,26 +44,59 @@ export const Sidebar: React.FC = () => {
     switchSession,
     sendMessage,
     isRunning,
+    isSidebarOpen,
+    setIsSidebarOpen,
   } = useChat();
 
+  const handleSelectAgent = (agentId: string) => {
+    setActiveAgent(agentId);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  if (!isSidebarOpen) {
+    return null;
+  }
+
   return (
-    <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col h-screen select-none">
-      {/* Brand Header */}
-      <div className="p-4 border-b border-slate-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
-            <Building2 className="w-4 h-4" />
+    <>
+      {/* Mobile/Tablet Backdrop Overlay (<1024px) */}
+      <div
+        onClick={() => setIsSidebarOpen(false)}
+        className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-30 lg:hidden"
+        aria-hidden="true"
+      />
+
+      <aside className="fixed lg:static top-0 left-0 z-40 w-72 bg-slate-900 border-r border-slate-800 flex flex-col h-screen select-none shadow-2xl lg:shadow-none transition-transform duration-200">
+        {/* Brand Header */}
+        <div className="p-4 border-b border-slate-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold text-slate-100 flex items-center gap-1.5 leading-none">
+                  VDaAgent
+                  <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                    PoC
+                  </span>
+                </h1>
+                <p className="text-[11px] text-slate-400 mt-1 leading-none">Real Estate Multi-Agent</p>
+              </div>
+            </div>
+
+            {/* Close Sidebar Button on Mobile */}
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 lg:hidden transition-colors"
+              title="Đóng menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-slate-100 flex items-center gap-1.5 leading-none">
-              VDaAgent
-              <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                PoC
-              </span>
-            </h1>
-            <p className="text-[11px] text-slate-400 mt-1 leading-none">Real Estate Multi-Agent</p>
-          </div>
-        </div>
 
         {/* Session Switcher */}
         <div className="mt-3 flex items-center gap-2">
@@ -103,7 +137,7 @@ export const Sidebar: React.FC = () => {
           return (
             <button
               key={agent.agent_id}
-              onClick={() => setActiveAgent(agent.agent_id)}
+              onClick={() => handleSelectAgent(agent.agent_id)}
               className={`w-full text-left px-3 py-2.5 rounded-xl transition-all flex items-start gap-2.5 ${
                 isSelected
                   ? 'bg-sky-500/15 border border-sky-500/30 text-white shadow-sm'
@@ -223,5 +257,6 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
     </aside>
+    </>
   );
 };

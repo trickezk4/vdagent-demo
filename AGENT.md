@@ -288,19 +288,31 @@ sequenceDiagram
 
 ## **6. Giao diện Người dùng & Trải nghiệm Tương tác (`apps/web`)**
 
-### **6.1. Bố cục 3 Cột Hiện đại**
-1. **Cột Trái (Sidebar)**:
+### **6.1. Bố cục 3 Cột Đáp ứng Linh hoạt (Responsive Multi-Device Layout)**
+1. **Cột Trái (Sidebar - Danh sách Agent & Quản trị Phiên)**:
    - Danh sách Agent: Orchestrator + 5 Core Agents + Remote Python Agent.
    - Icon động: Khi một agent đang được gọi xử lý, biểu tượng chuyển từ chấm xanh tĩnh sang biểu tượng loading xoay tròn (`Loader2 animate-spin`) và nhãn trạng thái "Đang xử lý...".
-2. **Cột Giữa (Chatbox)**:
-   - **Orchestrator Mode**: Hiển thị quá trình thực thi phân tách rõ ràng từng block agent (`[data-agent]`, `[compare-agent]`, etc.), có nút mở nhanh chatbox riêng của agent tương ứng.
-   - **Individual Agent Mode**: Cho phép chat trực tiếp 1-1 với agent. Khi agent đang suy luận, hiển thị visualizer quá trình sinh suy luận Chain-of-Thought (CoT) theo thời gian thực và trả ra output xác thực.
-   - Lưu trữ phiên: Lưu lịch sử hội thoại trên cả Server và `localStorage`, tải lại trang F5 giữ nguyên toàn bộ tin nhắn cũ.
-3. **Cột Phải (Inspector Điều hướng Hai chiều)**:
+   - Thiết kế Responsive: Trên màn hình lớn ($\ge 1024px$), hiển thị cố định $w\text{-72}$. Trên máy tính bảng và điện thoại ($< 1024px$), tự động thu gọn thành ngăn kéo (Slide-over Drawer) với lớp phủ mờ (Backdrop), đóng mở dễ dàng qua nút Hamburger trên thanh điều hướng.
+2. **Cột Giữa (Chatbox Tương tác & Trực quan hóa CoT)**:
+   - **Orchestrator Mode**: Hiển thị quy trình thực thi phân tách rõ ràng theo từng block agent (`[data-agent]`, `[compare-agent]`, etc.), có nút chuyển nhanh đến chatbox của agent tương ứng.
+   - **Individual Agent Mode**: Cho phép trò chuyện 1-1 với từng chuyên gia. Khi agent suy luận, hiển thị visualizer quá trình sinh suy luận Chain-of-Thought (CoT) theo thời gian thực (hộp bóng suy nghĩ màu hổ phách `bg-amber-950/20` có icon `💭`) và xuất output xác thực.
+   - Thanh điều hướng Header: Bổ sung nút Hamburger mở danh sách Agent, nhãn trạng thái kết nối, và nút bật/tắt Inspector kèm huy hiệu số lượng artifact hiện có.
+   - Lưu trữ phiên: Đồng bộ lịch sử hội thoại trên cả Server (`var/gateway-sessions.json`) và Client (`localStorage`), F5 tải lại trang giữ nguyên 100% dữ liệu.
+3. **Cột Phải (Inspector Điều hướng Hai chiều & Kho Lưu Trữ Tạo Phẩm)**:
+   - **Artifacts (`ArtifactsViewer`)**:
+     - Danh mục toàn diện các Artifacts phát sinh trong phiên (Dataset, Comparison, Insight, Chart Spec, Report, Finance Plan).
+     - **Đánh thời gian tạo từng artifact**: Hiển thị rõ mốc thời gian ISO chuẩn hóa sang định dạng tiếng Việt (`HH:mm:ss • DD/MM/YYYY`) kèm mã ID, Producer và trạng thái kiểm thực `VALID`.
+     - **Dropdown menu sắp xếp theo ngày tạo**: Cho phép sắp xếp theo *Mới nhất trước (Newest)*, *Cũ nhất trước (Oldest)*, *Loại A $\rightarrow$ Z*, *Loại Z $\rightarrow$ A*, kết hợp ô tìm kiếm và bộ lọc danh mục.
+     - **Trình xem chi tiết chống rỗng (No-empty guarantee)**: Hiển thị giao diện trực quan riêng biệt cho từng loại artifact (bảng đối chuẩn Comparison, 3 nguyên nhân Insight có confidence & evidence tags, bảng dữ liệu Dataset, biểu đồ Recharts, báo cáo Report, lịch trả góp Finance) và cho phép mở mã JSON nguồn với nút sao chép nhanh.
    - **Bằng chứng (`EvidenceViewer`)**: Chế độ Catalog hiển thị toàn bộ căn hộ bán chậm và căn hộ đối chuẩn Sapphire; chế độ Chi tiết hiển thị thông tin chuyên sâu của căn hộ kèm 3 nguyên nhân và khuyến nghị. Có nút `< Quay lại danh mục bằng chứng` để dễ dàng duyệt lại.
-   - **Báo cáo (`ReportViewer`)**: Hiển thị báo cáo 6 phần với mã bằng chứng click-to-view, nhúng trực tiếp 3 biểu đồ Recharts tương tác đầy đủ, kèm nút `< Quay lại danh mục báo cáo`.
-   - **Biểu đồ (`ChartViewer`)**: Trình xem biểu đồ độc lập 3 chế độ (DOM, Đơn giá, Tương quan Giá-DOM).
-   - **Artifacts (`ArtifactList`)**: Liệt kê đầy đủ mọi artifact phát sinh trong phiên làm việc.
+   - **Báo cáo (`ReportViewer`)**: Hiển thị báo cáo 6 phần với mã bằng chứng click-to-view, nhúng trực tiếp 3 biểu đồ Recharts tương tác đầy đủ, kèm nút mở nhanh Kho Artifacts.
+   - **Biểu đồ (`ChartViewer`)**: Trình xem biểu đồ độc lập 3 chế độ (DOM vs 90d, Đơn giá vs Sapphire, Tương quan Giá-DOM).
+   - **Kho Dữ Liệu (`DatasetTable`)**: Bảng tra cứu trực tiếp kho dữ liệu SQLite với bộ lọc nhanh căn hộ DOM $\ge 90$ ngày.
+   - **Tài Chính (`FinanceViewer`)**: Bảng tính kế hoạch vay vốn và phân rã lịch trả góp gốc lãi hàng tháng từ Python Service.
+
+### **6.2. Thiết Kế Thanh Cuộn Đồng Bộ Dark Theme (Universal Dark Scrollbars)**
+- Hệ thống áp dụng cấu hình CSS thanh cuộn đồng bộ toàn diện trên cả thanh cuộn dọc (Vertical) và ngang (Horizontal).
+- Sử dụng dải màu Slate/Zinc chuẩn (`track: #0b0f19`, `thumb: #334155`, `hover: #475569`, `active: #0284c7`) triệt tiêu hoàn toàn thanh cuộn trắng/xám mặc định của trình duyệt, tương thích mượt mà trên Chrome, Firefox, Safari và Edge.
 
 ---
 
@@ -316,5 +328,9 @@ sequenceDiagram
 | **Reasoning CoT Visualization** | Khi agent được gọi thực thi, chatbox thể hiện các bước suy luận Chain-of-Thought (Reasoning) từng bước trước khi hoàn tất output. |
 | **Dynamic Sidebar Loading** | Sidebar hiển thị icon loading xoay tròn (`Loader2 animate-spin`) chính xác tại agent đang chạy, không chỉ riêng Orchestrator. |
 | **Session Persistence** | Toàn bộ lịch sử chat của Orchestrator và các sub-agent được lưu trữ liên tục (`gateway-sessions.json` & `localStorage`), F5 không mất dữ liệu. |
+| **Dedicated Artifacts Tab** | Cột Inspector bên phải có tab Artifacts chuyên biệt, hiển thị đầy đủ thời gian tạo (`created_at`) và menu dropdown sắp xếp theo ngày tạo (Mới nhất / Cũ nhất). |
+| **Artifact Detail Bugfix** | Mọi artifact khi mở từ tab Báo cáo hay danh mục đều hiển thị nội dung chuyên sâu đầy đủ, không còn tình trạng trắng màn hình hay không có nội dung. |
 | **Two-Way Navigation** | Cột Inspector hỗ trợ duyệt danh mục tổng quan và chi tiết với nút quay lại (Back) trên cả tab Bằng chứng và tab Báo cáo. |
 | **Embedded Recharts** | Báo cáo hoàn chỉnh nhúng trực tiếp 3 biểu đồ Recharts tương tác (DOM vs 90d, Giá vs Sapphire, Tương quan DOM & Giá). |
+| **Dark Theme Scrollbars** | Các thanh cuộn ngang và dọc trên toàn bộ giao diện đồng bộ màu sắc tối tinh tế (`#334155` / `#0b0f19`), không bị lệch theme sáng của trình duyệt. |
+| **Responsive Design** | Giao diện tự động thích ứng mượt mà trên Mobile, Tablet và Desktop với hệ thống ngăn kéo trượt Slide-over Drawer và nút điều khiển Header. |

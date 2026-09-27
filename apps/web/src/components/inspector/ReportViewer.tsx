@@ -33,7 +33,7 @@ import {
 import { useChat } from '../../context/ChatContext';
 
 export const ReportViewer: React.FC = () => {
-  const { artifacts, inspectEvidence, openArtifact } = useChat();
+  const { artifacts, inspectEvidence, openArtifact, setInspectorTab } = useChat();
   const [viewMode, setViewMode] = useState<'report' | 'catalog'>('report');
 
   const reportArtifact = artifacts.report;
@@ -109,12 +109,17 @@ export const ReportViewer: React.FC = () => {
                 <p className="text-xs text-slate-400 mt-1">
                   Người tạo: <span className="text-slate-300 font-mono">{art.producer}</span> • Trạng thái: {art.status}
                 </p>
+                {art.created_at && (
+                  <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                    Thời gian: {new Date(art.created_at).toLocaleTimeString('vi-VN')} {new Date(art.created_at).toLocaleDateString('vi-VN')}
+                  </p>
+                )}
               </div>
 
               <button
                 type="button"
                 onClick={() => {
-                  openArtifact(type);
+                  openArtifact(art.artifact_id || type);
                   if (type === 'report') setViewMode('report');
                 }}
                 className="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-xs font-medium transition-colors"
@@ -157,12 +162,12 @@ export const ReportViewer: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setViewMode('catalog')}
+          onClick={() => setInspectorTab('artifacts')}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition-colors"
-          title="Xem danh sách tất cả artifacts"
+          title="Mở tab danh mục tất cả artifacts"
         >
-          <Layers className="w-3.5 h-3.5 text-sky-400" />
-          <span>Danh mục Artifacts</span>
+          <Layers className="w-3.5 h-3.5 text-amber-400" />
+          <span>Kho Artifacts</span>
         </button>
       </div>
 

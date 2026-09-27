@@ -20,6 +20,12 @@ interface ChatContextType {
   inspectedUnit: UnitDetail | null;
   inspectedUnitId: string | null;
   inspectorTab: InspectorTab;
+  isSidebarOpen: boolean;
+  isInspectorOpen: boolean;
+  selectedArtifactId: string | null;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsInspectorOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedArtifactId: (id: string | null) => void;
   setActiveAgent: (agentId: string) => void;
   setInspectorTab: (tab: InspectorTab) => void;
   createNewSession: () => void;
@@ -162,6 +168,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [inspectedUnitId, setInspectedUnitId] = useState<string | null>(null);
   const [inspectedUnit, setInspectedUnit] = useState<UnitDetail | null>(null);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('report');
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
+  const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1280;
+    }
+    return true;
+  });
+  const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -384,17 +403,37 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const openArtifact = (typeOrId: string) => {
-    if (typeOrId.includes('chart') || typeOrId.startsWith('ch_')) {
+    // 1. Direct match on existing artifact ID
+    const matchedByUuid = Object.values(artifacts).find(
+      (a: any) => a?.artifact_id === typeOrId
+    );
+    if (matchedByUuid) {
+      setSelectedArtifactId(matchedByUuid.artifact_id);
+      setInspectorTab('artifacts');
+      setIsInspectorOpen(true);
+      return;
+    }
+
+    // 2. Direct tab shortcuts
+    if (typeOrId === 'chart' || typeOrId === 'chart_spec' || typeOrId.startsWith('ch_')) {
       setInspectorTab('chart');
-    } else if (typeOrId.includes('report') || typeOrId.startsWith('rp_')) {
+    } else if (typeOrId === 'report' || typeOrId.startsWith('rp_')) {
       setInspectorTab('report');
-    } else if (typeOrId.includes('data') || typeOrId.startsWith('ds_')) {
+    } else if (typeOrId === 'dataset' || typeOrId.startsWith('ds_')) {
       setInspectorTab('dataset');
-    } else if (typeOrId.includes('finance') || typeOrId.includes('loan')) {
+    } else if (typeOrId === 'finance' || typeOrId === 'finance_plan' || typeOrId.includes('loan')) {
       setInspectorTab('finance');
     } else {
+      // Comparison, insight, or any other artifact type
+      const matched = artifacts[typeOrId];
+      if (matched?.artifact_id) {
+        setSelectedArtifactId(matched.artifact_id);
+      } else {
+        setSelectedArtifactId(null);
+      }
       setInspectorTab('artifacts');
     }
+    setIsInspectorOpen(true);
   };
 
   // Send message to active agent or orchestrator
@@ -552,6 +591,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         inspectedUnit,
         inspectedUnitId,
         inspectorTab,
+        isSidebarOpen,
+        isInspectorOpen,
+        selectedArtifactId,
+        setIsSidebarOpen,
+        setIsInspectorOpen,
+        setSelectedArtifactId,
         setActiveAgent,
         setInspectorTab,
         createNewSession,

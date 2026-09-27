@@ -19,6 +19,8 @@ import {
   Clock,
   ExternalLink,
   Sparkles,
+  Menu,
+  PanelRight,
 } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import { MessageItem } from './MessageItem';
@@ -47,11 +49,16 @@ export const ChatPane: React.FC = () => {
     activeAgent,
     agents,
     messages,
+    artifacts,
     isRunning,
     runningAgents,
     activeTraces,
     agentTraces,
     setActiveAgent,
+    isSidebarOpen,
+    setIsSidebarOpen,
+    isInspectorOpen,
+    setIsInspectorOpen,
   } = useChat();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -99,37 +106,47 @@ export const ChatPane: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-screen bg-slate-950 min-w-0">
       {/* Agent Chat Header */}
-      <header className="px-6 py-3.5 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-slate-800 border border-slate-700">
+      <header className="px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center justify-between z-10 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {/* Mobile Sidebar Hamburger Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 lg:hidden flex-shrink-0 transition-colors"
+            title="Mở danh sách Agents"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+
+          <div className="p-2 rounded-xl bg-slate-800 border border-slate-700 flex-shrink-0">
             {AGENT_HEADER_ICONS[activeAgent] || <Bot className="w-5 h-5 text-sky-400" />}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-slate-100">{currentAgent.name || currentAgent.agent_id}</h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <h2 className="text-xs sm:text-sm font-bold text-slate-100 truncate">{currentAgent.name || currentAgent.agent_id}</h2>
+              <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400">
                 {currentAgent.grpc_target || 'Internal Core'}
               </span>
               {currentAgent.is_dynamic && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   Dynamic Hot-Plug
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 mt-0.5 truncate max-w-xl">{currentAgent.description}</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate max-w-sm sm:max-w-xl">{currentAgent.description}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {isCurrentAgentRunning ? (
-            <span className="flex items-center gap-1.5 text-xs text-sky-400 font-mono">
+            <span className="flex items-center gap-1 text-xs text-sky-400 font-mono">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Đang xử lý</span>
+              <span className="hidden sm:inline">Đang xử lý</span>
             </span>
           ) : (
-            <>
+            <div className="hidden sm:flex items-center gap-1.5">
               <span
-                className={`w-2.5 h-2.5 rounded-full ${
+                className={`w-2 h-2 rounded-full ${
                   currentAgent.status === 'HEALTHY'
                     ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50'
                     : 'bg-slate-500'
@@ -138,8 +155,28 @@ export const ChatPane: React.FC = () => {
               <span className="text-xs text-slate-400 font-mono">
                 {currentAgent.status === 'HEALTHY' ? 'Available' : 'Offline'}
               </span>
-            </>
+            </div>
           )}
+
+          {/* Toggle Inspector Button */}
+          <button
+            type="button"
+            onClick={() => setIsInspectorOpen((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+              isInspectorOpen
+                ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+            }`}
+            title={isInspectorOpen ? 'Ẩn thanh tra' : 'Mở thanh tra (Inspector)'}
+          >
+            <PanelRight className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Thanh Tra</span>
+            {Object.keys(artifacts).length > 0 && (
+              <span className="text-[10px] font-mono px-1 rounded bg-amber-500/20 text-amber-300 ml-0.5">
+                {Object.keys(artifacts).length}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
