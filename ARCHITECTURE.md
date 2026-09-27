@@ -72,6 +72,56 @@ flowchart TB
     UI <==>|HTTP REST / SSE Stream| GW
 ```
 
+### **1.1. Sơ Đồ Kiến Trúc Đơn Giản Hóa (PoC Quick-Look Diagram)**
+
+> [!TIP]
+> **Dành cho các thành viên trong team nắm nhanh PoC trong 30 giây**: Hệ thống hoạt động theo mô hình **Hub-and-Spoke tập trung qua Gateway**. Gateway nhận yêu cầu từ Web UI, vừa điều phối luồng phân tích 4 bước (DAG) qua 5 Core Sub-Agents (gRPC), vừa hỗ trợ chat 1-1 trực tiếp và tự động nhận diện Agent Python cắm nóng qua REST register mà không cần cấu hình thủ công.
+
+```mermaid
+flowchart TD
+    User(["👤 Người Dùng (Web Dashboard :5173)\n[Sidebar Loading • Chatbox CoT • Inspector 2 Chiều & Kho Artifacts]"])
+    
+    subgraph GatewayHub["🌐 API Gateway & Orchestrator Hub (:3000)"]
+        DAG["⚡ DAG Orchestrator\n(Điều phối luồng 4 bước)"]
+        Router["🧭 Dynamic Router\n& Hot-plug Registry"]
+        SessionStore[("💾 Session Store\n(Lịch sử chat & Kho Artifacts)")]
+    end
+
+    User <==>|"HTTP REST / SSE Stream (Real-time CoT & Traces)"| GatewayHub
+
+    subgraph CoreAgents["🤖 5 Core Sub-Agents (gRPC :50051 - :50055 / Node.js)"]
+        direction TB
+        DA["1. Data Agent (:50051)\nKho BĐS SQLite • Căn hộ DOM >= 90d"]
+        CA["2. Compare Agent (:50052)\nĐối chuẩn Peer Group Sapphire (47.6 tr/m²)"]
+        IA["2. Insight Agent (:50053)\n3 Căn nguyên gốc & Gắn mã bằng chứng"]
+        CHA["3. Chart Agent (:50054)\n3 Biểu đồ Recharts tương tác đa chiều"]
+        RA["4. Report Agent (:50055)\nBáo cáo 6 phần PRD & Bằng chứng"]
+    end
+
+    subgraph HotPlugAgent["🔌 Agent Cắm Nóng Độc Lập (Python :50056)"]
+        FA["Python Finance Agent (:50056)\nGói vay ngân hàng 70% & Bảng trả góp gốc lãi"]
+    end
+
+    %% DAG Flow via Gateway Hub
+    DAG -->|"1. Truy vấn Dữ liệu"| DA
+    DA -.->|"DatasetArtifact"| DAG
+    DAG -->|"2. Chạy Song Song (Promise.all)"| CA
+    DAG -->|"2. Chạy Song Song (Promise.all)"| IA
+    CA -.->|"ComparisonArtifact"| DAG
+    IA -.->|"InsightArtifact"| DAG
+    DAG -->|"3. Sinh Biểu đồ"| CHA
+    CHA -.->|"ChartSpecArtifact"| DAG
+    DAG -->|"4. Tổng hợp Báo cáo"| RA
+    RA -.->|"ReportArtifact"| DAG
+
+    %% Hot-plug Flow
+    FA -->|"Tự động đăng ký khi khởi chạy (POST /register)"| Router
+    Router -.->|"Dynamic Route gRPC"| FA
+
+    %% 1-1 Direct Chat
+    User -.->|"Trò chuyện 1-1 trực tiếp với từng Agent chuyên môn"| GatewayHub
+```
+
 ---
 
 ## **2. Bản đồ Phân Bổ Mạng & Cổng Dịch Vụ (Network & Port Matrix)**
