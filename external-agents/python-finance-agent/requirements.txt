@@ -1,0 +1,4 @@
+grpcio>=1.66.0
+grpcio-tools>=1.66.0
+pydantic>=2.8.0
+requests>=2.32.0
