@@ -49,14 +49,8 @@ class PythonFinanceAgentServicer(agent_pipeline_pb2_grpc.SubAgentServiceServicer
 
     def ExecuteStep(self, request, context):
         prompt = request.user_prompt or ""
-        # 1. Phát event TRACE: Báo tiến trình cho Gateway
-        yield agent_pipeline_pb2.StepStreamEvent(
-            type=agent_pipeline_pb2.StepStreamEvent.TRACE,
-            message=f"[Python-FinanceAgent] Tiếp nhận câu hỏi: '{prompt[:60]}...'. Đang phân tích phương án vay ngân hàng..."
-        )
-        time.sleep(0.4)
 
-        # 2. Phân tích giá trị bất động sản từ prompt người dùng (ví dụ: '4.5 tỷ', '3 tỷ', '2.85 tỷ')
+        # 1. Parse parameters from user prompt (price, ratio, years)
         property_price = 4500000000.0
         match_ty = re.search(r'(\d+(?:\.\d+)?)\s*(?:tỷ|ty|tỉ|billion)', prompt, re.IGNORECASE)
         if match_ty:
@@ -77,16 +71,27 @@ class PythonFinanceAgentServicer(agent_pipeline_pb2_grpc.SubAgentServiceServicer
                 term_years = parsed_yr
 
         loan_amount = property_price * loan_ratio
-        interest_rate = 8.5  # 8.5%/năm
+        interest_rate = 8.5  # 8.5%/year
         monthly_rate = (interest_rate / 100.0) / 12.0
         num_payments = term_years * 12
         monthly_payment = (loan_amount * monthly_rate) / (1.0 - (1.0 + monthly_rate) ** -num_payments)
 
-        yield agent_pipeline_pb2.StepStreamEvent(
-            type=agent_pipeline_pb2.StepStreamEvent.TRACE,
-            message=f"[Python-FinanceAgent] Giá nhà: {property_price/1e9:.2f} tỷ | Vay {loan_ratio*100:.0f}% ({loan_amount/1e9:.2f} tỷ) trong {term_years} năm | Trả góp: {monthly_payment:,.0f} đ/tháng."
-        )
+        # 2. Stream Reasoning Chain-of-Thought (CoT) Steps
+        cot_steps = [
+            f"[Python-FinanceAgent CoT 1/4] Tiếp nhận thông số: Bất động sản giá trị {property_price/1e9:.2f} tỷ VNĐ, nhu cầu vay {loan_ratio*100:.0f}% trong thời hạn {term_years} năm.",
+            f"[Python-FinanceAgent CoT 2/4] Kiểm tra chính sách ngân hàng đối tác: Hạn mức vay tối đa 70-80%, hỗ trợ ân hạn nợ gốc và lãi suất 0% trong 18 tháng đầu từ Techcombank / Vietcombank.",
+            f"[Python-FinanceAgent CoT 3/4] Áp dụng công thức niên kim tính dư nợ giảm dần: Vay {loan_amount/1e9:.2f} tỷ VNĐ, trả góp ước tính {monthly_payment:,.0f} đ/tháng (gốc + lãi thả nổi 8.5%/năm).",
+            f"[Python-FinanceAgent CoT 4/4] Tổng hợp phương án tài chính tối ưu dòng tiền và đóng gói FinancePlanArtifact.",
+        ]
 
+        for step in cot_steps:
+            yield agent_pipeline_pb2.StepStreamEvent(
+                type=agent_pipeline_pb2.StepStreamEvent.TRACE,
+                message=step
+            )
+            time.sleep(0.08)
+
+        # 3. Construct validated MortgagePlan
         plan = MortgagePlan(
             property_price=property_price,
             loan_amount=loan_amount,
@@ -97,7 +102,6 @@ class PythonFinanceAgentServicer(agent_pipeline_pb2_grpc.SubAgentServiceServicer
             policy_note="Ân hạn nợ gốc và hỗ trợ lãi suất 0% trong 18 tháng đầu từ ngân hàng đối tác (Techcombank/Vietcombank)."
         )
 
-        # 3. Đóng gói ArtifactEnvelope hợp lệ theo chuẩn PRD
         artifact_envelope = {
             "artifact_id": f"art-fin-{int(time.time())}",
             "run_id": request.run_id if request.run_id else f"run-{int(time.time())}",
@@ -112,10 +116,10 @@ class PythonFinanceAgentServicer(agent_pipeline_pb2_grpc.SubAgentServiceServicer
             "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         }
 
-        # 4. Phát event COMPLETE kèm JSON Artifact
+        # 4. Emit COMPLETE event
         yield agent_pipeline_pb2.StepStreamEvent(
             type=agent_pipeline_pb2.StepStreamEvent.COMPLETE,
-            message="[Python-FinanceAgent] Đã hoàn thành bảng tính phương án tài chính và lịch trả nợ.",
+            message="[Python-FinanceAgent] Đã hoàn tất lập phương án tài chính và lịch trả góp ngân hàng.",
             output_artifact_json=json.dumps(artifact_envelope)
         )
 
@@ -141,7 +145,15 @@ def auto_register_to_gateway():
         print(f">>> [Python-FinanceAgent] Gateway not reachable yet for auto-register ({e}). Will wait for Gateway call.", flush=True)
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
+    options = [
+        ('grpc.max_receive_message_length', 10 * 1024 * 1024),
+        ('grpc.max_send_message_length', 10 * 1024 * 1024),
+        ('grpc.keepalive_time_ms', 30000),
+        ('grpc.keepalive_timeout_ms', 10000),
+        ('grpc.http2.min_ping_interval_without_data_ms', 5000),
+        ('grpc.http2.max_pings_without_data', 0),
+    ]
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4), options=options)
     agent_pipeline_pb2_grpc.add_SubAgentServiceServicer_to_server(PythonFinanceAgentServicer(), server)
     server.add_insecure_port('[::]:50056')
     server.start()

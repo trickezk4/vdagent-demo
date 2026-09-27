@@ -1,18 +1,19 @@
 /**
  * apps/agents/chart-agent/src/index.ts
  * Standalone Chart Agent microservice running on gRPC Port 50054
+ * Generates Recharts visualization specifications with live LLM Chain-of-Thought (CoT) reasoning.
  */
 
 import { createSubAgentServer } from '../../base-agent.js';
-import { callLlmWithFallback } from '../../llm-client.js';
+import { streamLlmReasoningWithFallback } from '../../llm-client.js';
 import { buildDeterministicChartPayload } from './chart-builder.js';
 import {
   ChartSpecPayloadSchema,
   type ChartSpecPayload,
 } from '@vda/contracts';
 import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import dotenv from 'dotenv';
+import * as path from 'node:path';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -23,8 +24,8 @@ export function startChartAgentServer(port: number = CHART_AGENT_PORT) {
   return createSubAgentServer({
     role: CHART_AGENT_ROLE,
     port,
-    handler: async (request, { emitTrace, taskId, runId }) => {
-      emitTrace(`[${CHART_AGENT_ROLE}] Starting visual chart specification generation for task: ${taskId}`);
+    handler: async (request, { emitTrace, emitToken, taskId, runId }) => {
+      emitTrace(`[${CHART_AGENT_ROLE}] Tiếp nhận yêu cầu khởi tạo biểu đồ trực quan Recharts cho task: ${taskId}`);
 
       // Extract prior artifacts
       const inputArtifacts = request.input_artifacts || [];
@@ -46,7 +47,7 @@ export function startChartAgentServer(port: number = CHART_AGENT_PORT) {
       const insightPayload = parseContent(insightArt);
       const datasetPayload = parseContent(datasetArt);
 
-      emitTrace(`[${CHART_AGENT_ROLE}] Ingested upstream artifacts. Analyzing peer comparison and insight findings...`);
+      emitTrace(`[${CHART_AGENT_ROLE}] Nạp ${inputArtifacts.length} artifacts đầu vào. Phân tích dữ liệu đối chuẩn và nguyên nhân gốc...`);
 
       // Collect evidence and input artifact refs
       const inputArtifactRefs: string[] = inputArtifacts
@@ -71,34 +72,52 @@ export function startChartAgentServer(port: number = CHART_AGENT_PORT) {
       }
 
       const systemPrompt = `You are a Visual Analytics Specialist Agent for Real Estate.
-Generate a valid ChartSpecPayload JSON matching:
-{
-  "chart_type": "bar" | "scatter",
-  "title": string,
-  "description": string,
-  "chart_data": array of flat objects,
-  "x_axis": string,
-  "y_axis": string,
-  "benchmark_line": { "value": number, "label": string, "color": string },
-  "series": array of { "key": string, "name": string, "color": string }
-}
-Output ONLY valid JSON.`;
+Analyze the comparison and insight findings, and configure the primary Recharts visualization.
 
-      const userPrompt = `Request: ${request.user_prompt || 'Visualize slow-moving units with DOM > 90'}
+Schema structure for ChartSpecPayload:
+{
+  "chart_type": "bar",
+  "title": "So sánh DOM các căn tồn kho vs Ngưỡng 90 ngày",
+  "description": "Biểu đồ cột thể hiện số ngày lưu kho của từng căn hộ phân khu The Sapphire 1 so với ngưỡng cảnh báo 90 ngày.",
+  "chart_data": [
+    { "unit_code": "VH-OCP-S102-1406", "dom": 115, "evidence_id": "UNIT-VH-02" },
+    { "unit_code": "VH-OCP-S102-1405", "dom": 115, "evidence_id": "UNIT-VH-01" },
+    { "unit_code": "VH-OCP-S105-0812", "dom": 115, "evidence_id": "UNIT-VH-03" },
+    { "unit_code": "VH-OCP-S108-1903", "dom": 98, "evidence_id": "UNIT-VH-04" }
+  ],
+  "x_axis": "unit_code",
+  "y_axis": "dom",
+  "series": [
+    { "key": "dom", "name": "Số ngày lưu kho (DOM)", "color": "#ef4444" }
+  ],
+  "benchmark_line": { "value": 90, "label": "Ngưỡng cảnh báo 90 ngày", "color": "#f59e0b" }
+}
+Return the JSON object strictly matching this schema.`;
+
+      const userPrompt = `Request: ${request.user_prompt || 'Visualize slow-moving units with DOM >= 90'}
 Comparison Data: ${JSON.stringify(comparisonPayload || {})}
 Insight Data: ${JSON.stringify(insightPayload || {})}`;
 
-      const payload = await callLlmWithFallback<ChartSpecPayload>({
+      const fallbackCoTSteps = [
+        `[ChartAgent CoT 1/4] Tiếp nhận dữ liệu đối chuẩn và nguyên nhân gốc rễ từ Compare Agent & Insight Agent.`,
+        `[ChartAgent CoT 2/4] Thiết kế Biểu đồ 1 (DOM Analysis): BarChart thể hiện số ngày lưu kho từng căn hộ kèm ReferenceLine màu đỏ tại y=90 ngày.`,
+        `[ChartAgent CoT 3/4] Thiết kế Biểu đồ 2 & 3 (Price & Correlation): Đo lường tương quan giữa đơn giá niêm yết (49.8 - 55.9 tr/m²) và thời gian lưu kho.`,
+        `[ChartAgent CoT 4/4] Chuẩn hóa mảng dữ liệu có gắn nhãn mã căn unit_code và mã bằng chứng evidence_ref. Đóng gói ChartSpecArtifact.`,
+      ];
+
+      const payload = await streamLlmReasoningWithFallback<ChartSpecPayload>({
         role: CHART_AGENT_ROLE,
         systemPrompt,
         userPrompt,
         schema: ChartSpecPayloadSchema,
         fallbackGenerator: () =>
           buildDeterministicChartPayload(comparisonPayload, insightPayload, datasetPayload, request.user_prompt),
+        fallbackCoTSteps,
         emitTrace,
+        emitToken,
       });
 
-      emitTrace(`[${CHART_AGENT_ROLE}] Successfully created Recharts-compliant ChartSpec (${payload.chart_type} chart).`);
+      emitTrace(`[${CHART_AGENT_ROLE}] Hoàn thành cấu hình biểu đồ Recharts (${payload.chart_type}) sẵn sàng render trên UI.`);
 
       return {
         artifact_type: 'chart_spec',

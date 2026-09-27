@@ -1,6 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import net from 'net';
 import { fileURLToPath } from 'url';
 import { startCoreAgents } from './start-core-agents.js';
 
@@ -39,10 +40,10 @@ async function ensureServicesRunning(): Promise<void> {
     });
 
     gatewayProcess.stdout?.on('data', (d) => {
-      // console.log(`[Gateway] ${d.toString().trim()}`);
+      console.log(`[Gateway] ${d.toString().trim()}`);
     });
     gatewayProcess.stderr?.on('data', (d) => {
-      // console.error(`[Gateway-Err] ${d.toString().trim()}`);
+      console.error(`[Gateway-Err] ${d.toString().trim()}`);
     });
 
     let ready = false;
@@ -162,18 +163,32 @@ async function runDemo() {
     }
   }
 
-  // Spawn tiến trình Python gRPC server
-  const pythonProcess: ChildProcess = spawn(pythonCmd, [pythonScriptPath], {
-    shell: true,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      PYTHONIOENCODING: 'utf-8',
-    },
+  // Kiểm tra xem port 50056 đã mở chưa
+  const isPort50056Open = await new Promise<boolean>((resolve) => {
+    const s = new net.Socket();
+    s.setTimeout(500);
+    s.on('connect', () => { s.destroy(); resolve(true); });
+    s.on('error', () => { s.destroy(); resolve(false); });
+    s.on('timeout', () => { s.destroy(); resolve(false); });
+    s.connect(50056, '127.0.0.1');
   });
 
-  // Chờ server Python gRPC khởi động
-  await sleep(2500);
+  let pythonProcess: ChildProcess | null = null;
+  if (!isPort50056Open) {
+    // Spawn tiến trình Python gRPC server
+    pythonProcess = spawn(pythonCmd, [pythonScriptPath], {
+      shell: true,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        PYTHONIOENCODING: 'utf-8',
+      },
+    });
+    // Chờ server Python gRPC khởi động
+    await sleep(2500);
+  } else {
+    console.log('  ⚡ Agent Python (Port 50056) đã đang chạy sẵn, tiếp tục kiểm tra cắm nóng...');
+  }
 
   console.log('  🔌 Gửi request đăng ký (Hot-plugging) lên Gateway qua POST /register...');
   const registerPayload = {
@@ -194,7 +209,7 @@ async function runDemo() {
   console.log('  📬 Gateway phản hồi:', regResult);
 
   if (!regResponse.ok || !regResult.success) {
-    if (pythonProcess.pid) {
+    if (pythonProcess?.pid) {
       spawn('taskkill', ['/pid', pythonProcess.pid.toString(), '/f', '/t'], { stdio: 'ignore' });
     }
     throw new Error('Giai đoạn 2 thất bại: Đăng ký cắm nóng không thành công!');
@@ -224,7 +239,7 @@ async function runDemo() {
   });
 
   if (!pythonArtifactReceived) {
-    if (pythonProcess.pid) {
+    if (pythonProcess?.pid) {
       spawn('taskkill', ['/pid', pythonProcess.pid.toString(), '/f', '/t'], { stdio: 'ignore' });
     }
     throw new Error('Giai đoạn 3 thất bại: Không nhận được kết quả tính toán từ Python Finance Agent!');
@@ -234,8 +249,8 @@ async function runDemo() {
   console.log('🎉 TẤT CẢ KIỂM THỬ ĐÃ PASS: KIẾN TRÚC STANDALONE GRPC HOẠT ĐỘNG HOÀN HẢO!');
   console.log('===============================================================');
 
-  // Dọn dẹp tiến trình Python sau khi test xong
-  if (pythonProcess.pid) {
+  // Dọn dẹp tiến trình Python sau khi test xong nếu do script spawn
+  if (pythonProcess?.pid) {
     if (process.platform === 'win32') {
       spawn('taskkill', ['/pid', pythonProcess.pid.toString(), '/f', '/t'], { stdio: 'ignore' });
     } else {
