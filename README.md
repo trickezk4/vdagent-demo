@@ -6,14 +6,29 @@ Hệ thống Multi-Agent phân tán mô phỏng điều tra và phân tích bấ
 
 ## 📋 Mục lục
 
-1. [Tổng quan Kiến trúc](#-tổng-quan-kiến-trúc)
-2. [Yêu cầu Môi trường](#-yêu-cầu-môi-trường-prerequisites)
-3. [Cài đặt &amp; Khởi tạo cho Người mới](#-cài-đặt--khởi-tạo-cho-người-mới)
-4. [Hướng dẫn Khởi chạy](#-hướng-dẫn-khởi-chạy)
-5. [Cắm nóng Agent thứ 7 (Python Finance Agent)](#-cắm-nóng-agent-thứ-7-python-finance-agent)
-6. [Kịch bản Kiểm thử Tự động](#-kịch-bản-kiểm-thử-tự-động)
-7. [Hướng dẫn Sử dụng Giao diện Web](#-hướng-dẫn-sử-dụng-giao-diện-web)
-8. [Xử lý Sự cố Thường gặp (Troubleshooting)](#-xử-lý-sự-cố-thường-gặp-troubleshooting)
+1. [Bản Đồ Tài Liệu Dự Án](#-bản-đồ-tài-liệu-dự-án-documentation-guide)
+2. [Tổng quan Kiến trúc](#-tổng-quan-kiến-trúc)
+3. [Yêu cầu Môi trường](#-yêu-cầu-môi-trường-prerequisites)
+4. [Cài đặt &amp; Khởi tạo cho Người mới](#-cài-đặt--khởi-tạo-cho-người-mới)
+5. [Hướng dẫn Khởi chạy](#-hướng-dẫn-khởi-chạy)
+6. [Cắm nóng Agent thứ 7 (Python Finance Agent)](#-cắm-nóng-agent-thứ-7-python-finance-agent)
+7. [Kịch bản Kiểm thử Tự động](#-kịch-bản-kiểm-thử-tự-động)
+8. [Hướng dẫn Sử dụng Giao diện Web](#-hướng-dẫn-sử-dụng-giao-diện-web)
+9. [Xử lý Sự cố Thường gặp (Troubleshooting)](#-xử-lý-sự-cố-thường-gặp-troubleshooting)
+
+---
+
+## 📚 Bản Đồ Tài Liệu Dự Án (Documentation Guide)
+
+Dự án được cấu trúc và tài liệu hóa chi tiết qua 5 tài liệu chính. Mỗi tài liệu phục vụ một mục đích chuyên biệt trong quá trình tìm hiểu, phát triển, quản trị và kiểm thử:
+
+| Tài liệu | Mục đích & Trọng tâm nghiệp vụ | Đối tượng & Thời điểm sử dụng |
+| :--- | :--- | :--- |
+| **[`README.md`](./README.md)** | **Hướng dẫn Khởi tạo & Vận hành Nhanh**: Giới thiệu dự án, yêu cầu môi trường, cài đặt từ A-Z, các lệnh khởi chạy (1 lệnh hoặc đa tiến trình), cắm nóng agent, kiểm thử tự động và xử lý sự cố. | Bắt buộc đọc đầu tiên cho mọi thành viên mới tiếp cận và chạy thử PoC. |
+| **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** | **Đặc Tả Kiến Trúc Kỹ Thuật Toàn Diện**: Sơ đồ Quick-Look 30 giây cho toàn team, bản đồ phân tầng 4 lớp, ma trận cổng mạng, cùng các luồng Sequence & Flowchart Mermaid chi tiết (DAG 4 bước, cắm nóng tự động không downtime, streaming CoT hai chế độ, và đồng bộ phiên). | Dành cho Kỹ sư Kiến trúc (Architects) và Backend Developers muốn nắm sâu luồng vận hành gRPC/SSE. |
+| **[`AGENT.md`](./AGENT.md)** | **Đặc Tả Kỹ Thuật Chi Tiết của Các Agent**: Quy định cấu trúc phong bì `ArtifactEnvelope`, băm SHA-256 canonical hash bảo đảm tính bất biến, nghiệp vụ chuyên môn của từng Agent (Data, Compare, Insight, Chart, Report, Python Finance), và bộ tiêu chí nghiệm thu (Definition of Done - DoD). | Dành cho Agent Developers, Data Engineers và QA kiểm tra tính đúng đắn của dữ liệu nghiệp vụ. |
+| **[`PROJECT.md`](./PROJECT.md)** | **Danh Mục Tính Năng & Quản Trị Dự Án (Feature Inventory)**: Bảng theo dõi 26 tính năng chuẩn hóa (từ `FEAT-C01` đến `FEAT-T01`) phân loại theo nhóm Contract, Warehouse, Sub-Agent, Gateway, Python Service, UI, Testing kèm milestone và ánh xạ nguồn đặc tả. | Dành cho Tech Leads và Project Managers theo dõi phạm vi tính năng và lộ trình hoàn thiện. |
+| **[`TEST_INFRA.md`](./TEST_INFRA.md)** | **Khung Hạ Tầng Kiểm Thử & Xác Thực (Test Blueprint)**: Triết lý kiểm thử hộp mờ (Opaque-Box), các bất biến về dữ liệu (Data Immutability & Lineage Invariants), ma trận test 26 tính năng, kịch bản E2E tự động `pnpm test:demo`, và kiểm thử deterministic offline. | Dành cho QA / Test Engineers muốn xác thực độ tin cậy và tự động hóa kiểm thử. |
 
 ---
 
@@ -31,6 +46,8 @@ Hệ thống được xây dựng theo mô hình Monorepo với các dịch vụ
 | **`chart-agent`**          | **50054** | gRPC       | Sinh cấu hình 3 biểu đồ Recharts (DOM 90d, Giá Sapphire, Tương quan Giá-DOM)                 |
 | **`report-agent`**         | **50055** | gRPC       | Tổng hợp báo cáo điều tra 6 phần chuẩn PRD kèm liên kết bằng chứng                       |
 | **`python-finance-agent`** | **50056** | gRPC       | **Agent cắm nóng (Python)**: Tính toán phương án vay mua nhà, lịch trả góp gốc lãi |
+
+> 💡 **Khuyến nghị**: Để xem sơ đồ Quick-Look 30 giây cùng toàn bộ luồng Sequence Mermaid chi tiết của DAG Pipeline, Hot-Plugging và CoT Streaming, vui lòng tham khảo **[`ARCHITECTURE.md`](./ARCHITECTURE.md)**.
 
 ---
 
@@ -176,6 +193,8 @@ Agent thứ 7 được viết bằng **Python** và hoạt động như một mi
    - Trên thanh Sidebar của Web UI, mục **Python Finance Agent** lập tức xuất hiện ở trạng thái **Online** mà không cần người dùng bấm nút cắm hay tải lại trang (F5)!
    - Giờ đây, bạn có thể chat trực tiếp với Python Finance Agent hoặc hỏi các câu liên quan đến vay vốn, hệ thống sẽ tự động định tuyến chuẩn xác.
 
+> 💡 **Tài liệu tham khảo chuyên sâu**: Chi tiết cơ chế đăng ký tự động và định tuyến dynamic routing được đặc tả tại **[`AGENT.md`](./AGENT.md#5-cơ-chế-hot-plugging-độc-lập-không-downtime)** và **[`ARCHITECTURE.md`](./ARCHITECTURE.md#32-luồng-cắm-nóng-agent-tự-động-autonomous-hot-plugging-flow)**.
+
 ---
 
 ## 🧪 Kịch bản Kiểm thử Tự động
@@ -197,6 +216,8 @@ Kịch bản sẽ tự động:
 ```bash
 pnpm typecheck
 ```
+
+> 💡 **Tài liệu tham khảo chuyên sâu**: Xem ma trận kiểm thử chi tiết cho 26 tính năng (`FEAT-C01` đến `FEAT-T01`), các bất biến dữ liệu, và triết lý kiểm thử hộp mờ tại **[`TEST_INFRA.md`](./TEST_INFRA.md)**.
 
 ---
 
