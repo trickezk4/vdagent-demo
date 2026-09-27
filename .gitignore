@@ -1,0 +1,84 @@
+# ==========================================
+# Dependencies
+# ==========================================
+node_modules/
+.pnpm-store/
+
+# ==========================================
+# Build & Compilation Outputs
+# ==========================================
+dist/
+build/
+out/
+*.tsbuildinfo
+.turbo/
+
+# ==========================================
+# Local Secrets & Environment Variables
+# ==========================================
+.env
+.env.local
+.env.*.local
+*.local
+!.env.example
+
+# ==========================================
+# Python Virtual Environments & Bytecode
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+external-agents/python-finance-agent/venv/
+external-agents/python-finance-agent/.venv/
+**/__pycache__/
+*.py[cod]
+*$py.class
+external-agents/python-finance-agent/proto/*_pb2.py
+external-agents/python-finance-agent/proto/*_pb2_grpc.py
+
+# ==========================================
+# Runtime Storage & Dynamic State
+# ==========================================
+var/
+*.sqlite
+*.sqlite3
+*.db
+packages/mock-warehouse/data/*.db
+packages/mock-warehouse/data/*.sqlite
+
+# ==========================================
+# Agent Workspace & Scratch Artifacts
+# ==========================================
+.agents/
+.gemini/
+scratch/
+
+# ==========================================
+# Logs & Debugging
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================================
+# IDE & System Files
+# ==========================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# ==========================================
+# Testing & Coverage
+# ==========================================
+coverage/
+.pytest_cache/
+.nyc_output/

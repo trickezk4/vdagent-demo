@@ -1,0 +1,36 @@
+{
+  "name": "vdagent-poc",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "start": "tsx scripts/start-all.ts",
+    "start:all": "tsx scripts/start-all.ts",
+    "start:agents": "tsx scripts/start-core-agents.ts",
+    "start:gateway": "pnpm --filter @vda/gateway run start",
+    "start:web": "pnpm --filter @vda/web run dev",
+    "test": "tsx tests/e2e/run-all.ts",
+    "test:e2e": "tsx tests/e2e/run-all.ts",
+    "test:demo": "tsx scripts/run-demo-flow.ts",
+    "lint": "tsc -b --noEmit",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "devDependencies": {
+    "@grpc/grpc-js": "^1.12.6",
+    "@grpc/proto-loader": "^0.7.13",
+    "@types/node": "^22.13.9",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "zod": "^3.23.8"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.9"
+  }
+}
