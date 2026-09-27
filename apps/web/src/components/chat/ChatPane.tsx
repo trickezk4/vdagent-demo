@@ -245,17 +245,17 @@ export const ChatPane: React.FC = () => {
         )}
 
         {/* ======================================================== */}
-        {/* CASE 2: Individual Agent is Running -> Live Token Streaming Preview */}
+        {/* CASE 2: Individual Agent is Running -> Live Reasoning CoT Streaming Preview */}
         {/* ======================================================== */}
         {activeAgent !== 'orchestrator' && isCurrentAgentRunning && (
-          <div className="my-4 p-4 rounded-xl bg-slate-900/90 border border-sky-500/40 shadow-xl text-slate-200 space-y-3">
+          <div className="my-4 p-4 rounded-xl bg-slate-900/95 border border-sky-500/40 shadow-2xl text-slate-200 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <div className="flex items-center gap-2 text-xs font-semibold text-sky-400">
                 <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
-                <span>{currentAgent.name} đang phân tích &amp; sinh kết quả...</span>
+                <span>{currentAgent.name} đang suy luận Chain-of-Thought (CoT)...</span>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">
-                gRPC Streaming
+                Live CoT Streaming
               </span>
             </div>
 
@@ -266,15 +266,26 @@ export const ChatPane: React.FC = () => {
               <span className="inline-block w-2 h-4 bg-sky-400 animate-pulse" />
             </div>
 
-            {/* Traces for this specific agent */}
+            {/* Live CoT Traces for this specific agent */}
             {agentTraces[activeAgent] && agentTraces[activeAgent].length > 0 && (
-              <div className="space-y-1 max-h-36 overflow-y-auto font-mono text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
-                {agentTraces[activeAgent].map((t, idx) => (
-                  <div key={idx} className="truncate">
-                    <span className="text-slate-600 mr-1">&gt;</span>
-                    {t.message}
-                  </div>
-                ))}
+              <div className="space-y-1.5 max-h-56 overflow-y-auto font-mono text-[11px] bg-slate-950/80 p-3 rounded-lg border border-slate-800">
+                <div className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <span>💭 Các bước suy luận (Reasoning Steps):</span>
+                </div>
+                {agentTraces[activeAgent].map((t, idx) => {
+                  const isCoT = t.message.includes('CoT') || t.message.includes('💭');
+                  return (
+                    <div
+                      key={idx}
+                      className={`leading-relaxed ${
+                        isCoT ? 'text-amber-200/90 bg-amber-500/5 p-1 rounded border-l-2 border-amber-400/60' : 'text-slate-400'
+                      }`}
+                    >
+                      <span className="text-slate-600 mr-1">&gt;</span>
+                      {t.message}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

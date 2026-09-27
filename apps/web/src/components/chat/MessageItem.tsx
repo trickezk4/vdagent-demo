@@ -161,7 +161,7 @@ export const MessageItem: React.FC<{ message: ChatMessage }> = ({ message }) => 
             >
               {showTraces ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
               <Terminal className="w-3.5 h-3.5 text-sky-400" />
-              <span>Quy trình thực thi phân tách theo từng Agent ({traces.length} bước)</span>
+              <span>💭 Quá trình suy luận Chain-of-Thought (CoT) &amp; Thực thi ({traces.length} bước)</span>
             </button>
 
             {showTraces && (
@@ -198,12 +198,18 @@ export const MessageItem: React.FC<{ message: ChatMessage }> = ({ message }) => 
                         </button>
                       </div>
                       <div className="space-y-1 text-slate-400">
-                        {logs.map((log, lIdx) => (
-                          <div key={lIdx} className="leading-snug">
-                            <span className="text-slate-600 mr-1">&gt;</span>
-                            {log}
-                          </div>
-                        ))}
+                        {logs.map((log, lIdx) => {
+                          const isCoT = log.includes('CoT') || log.includes('💭');
+                          return (
+                            <div
+                              key={lIdx}
+                              className={`leading-snug ${isCoT ? 'text-amber-200/90 bg-amber-500/5 p-1 rounded' : ''}`}
+                            >
+                              <span className="text-slate-600 mr-1">&gt;</span>
+                              {log}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   ));
